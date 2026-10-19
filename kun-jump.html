@@ -1,0 +1,2244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>蔡徐坤跳一跳</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body {
+    height:100%;
+    background:#05020c;
+    display:flex; align-items:center; justify-content:center;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    overflow:hidden;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-touch-callout:none;
+    background:
+      radial-gradient(circle at 20% 25%, rgba(124,58,237,.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 75%, rgba(245,158,11,.07) 0%, transparent 50%),
+      #05020c;
+  }
+
+  /* ---------- 竖屏游戏容器 ---------- */
+  #wrap {
+    position:relative;
+    width:min(100vw, calc(100vh * 3 / 5));
+    height:min(100vh, calc(100vw * 5 / 3));
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 0 80px rgba(140,90,255,.4), 0 0 0 1px rgba(160,120,255,.25);
+  }
+  canvas { display:block; width:100%; height:100%; cursor:pointer; touch-action:none; }
+
+  /* ---------- 游戏内控制按钮 ---------- */
+  #gameControls {
+    position:absolute; top:10px; left:50%; transform:translateX(-50%);
+    display:flex; gap:8px; z-index:8;
+  }
+  #gameControls.hidden { display:none !important; }
+  .ctrl-btn {
+    position:relative; width:34px; height:34px;
+    border-radius:10px;
+    border:1px solid rgba(167,139,250,.4);
+    background:rgba(22,13,44,.62);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    color:#e9d5ff; font-size:15px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .18s, transform .12s;
+    touch-action:manipulation;
+  }
+  .ctrl-btn:hover { background:rgba(167,139,250,.28); }
+  .ctrl-btn:active { transform:scale(.92); }
+  #gameSettingsBtn { animation:gearPulse 2.4s ease-in-out infinite; }
+  @keyframes gearPulse {
+    0%,100% { box-shadow:0 0 0 rgba(167,139,250,0); }
+    50%     { box-shadow:0 0 12px rgba(167,139,250,.55); }
+  }
+  .badge {
+    position:absolute; top:-5px; right:-5px;
+    min-width:16px; height:16px; padding:0 4px;
+    border-radius:8px;
+    background:linear-gradient(135deg,#f59e0b,#f97316);
+    color:#fff; font-size:10px; font-weight:700;
+    line-height:16px; text-align:center;
+    box-shadow:0 2px 8px rgba(245,158,11,.5);
+  }
+  .badge.hidden { display:none !important; }
+
+  /* ---------- 屏幕层 ---------- */
+  .screen {
+    position:absolute; inset:0;
+    display:flex; overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    background:rgba(7,3,18,.80);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    z-index:10; padding:18px;
+  }
+  .screen.hidden { display:none !important; }
+  .screen-inner {
+    margin:auto;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:clamp(12px, 2.4vh, 22px);
+    width:100%;
+  }
+
+  /* ---------- 主页 ---------- */
+  .logo {
+    font-size:clamp(28px, 7.5vw, 44px);
+    font-weight:800; letter-spacing:2px;
+    background:linear-gradient(135deg,#e9d5ff,#a78bfa 45%,#f0abfc);
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent;
+    filter:drop-shadow(0 0 18px rgba(167,139,250,.55));
+    text-align:center; line-height:1.15;
+  }
+  .subtitle {
+    font-size:clamp(11px,3vw,13px);
+    color:rgba(255,255,255,.48);
+    letter-spacing:3px;
+  }
+  .menu-btns {
+    display:flex; flex-direction:column; gap:10px;
+    width:min(300px, 82%); margin-top:4px;
+  }
+  .menu-row { display:flex; gap:9px; width:100%; }
+  .menu-row .btn { flex:1; }
+  .hint {
+    margin-top:4px; font-size:12px;
+    color:rgba(255,255,255,.35);
+    text-align:center; line-height:1.8;
+  }
+  .hint span { color:#fbbf24; font-weight:700; }
+  .hint .total-span { color:#a78bfa; }
+  .hint .item-span { color:#4ade80; }
+  .hint .skin-span { color:#f472b6; }
+
+  /* ---------- 地图选择 ---------- */
+  .map-panel {
+    width:min(360px, 88%);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .map-title {
+    font-size:12px; letter-spacing:3px;
+    color:rgba(255,255,255,.55);
+    text-align:center; font-weight:600;
+  }
+  .map-row { display:flex; gap:9px; }
+  .map-btn {
+    flex:1; display:flex; flex-direction:column;
+    align-items:center; gap:5px;
+    padding:7px 5px 9px;
+    border-radius:12px;
+    border:1.5px solid rgba(167,139,250,.25);
+    background:rgba(255,255,255,.04);
+    color:rgba(255,255,255,.7);
+    font-family:inherit; font-size:11.5px;
+    cursor:pointer; transition:all .18s;
+    touch-action:manipulation;
+  }
+  .map-btn:hover { background:rgba(167,139,250,.14); transform:translateY(-1px); }
+  .map-btn.active {
+    border-color:#a855f7;
+    background:rgba(168,85,247,.2);
+    color:#fff;
+    box-shadow:0 0 18px rgba(168,85,247,.4);
+  }
+  .map-preview {
+    width:100%; height:40px;
+    border-radius:7px; display:block;
+    border:1px solid rgba(255,255,255,.12);
+  }
+  .map-preview.night { background:linear-gradient(135deg,#0b0620,#2a1550 55%,#6b4ab8); }
+  .map-preview.snow  { background:linear-gradient(135deg,#08131f,#1d4460 55%,#9fe8ff); }
+  .map-preview.fire  { background:linear-gradient(135deg,#150404,#4a1005 55%,#fb923c); }
+  .map-name { font-weight:500; }
+
+  /* ---------- 按钮 ---------- */
+  .btn {
+    padding:12px 26px;
+    border-radius:12px;
+    border:1px solid rgba(167,139,250,.4);
+    background:rgba(167,139,250,.1);
+    color:#ece7ff;
+    font-size:clamp(13px,3.2vw,15px);
+    font-family:inherit; font-weight:500;
+    cursor:pointer; transition:background .18s, transform .12s, box-shadow .18s;
+    width:100%; touch-action:manipulation;
+  }
+  .btn:hover { background:rgba(167,139,250,.22); transform:translateY(-1px); }
+  .btn:active { transform:translateY(0) scale(.98); }
+  .btn.primary {
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    border-color:transparent; font-weight:700;
+    box-shadow:0 8px 24px rgba(139,92,246,.45);
+  }
+  .btn.primary:hover {
+    box-shadow:0 10px 30px rgba(139,92,246,.62);
+    background:linear-gradient(135deg,#8b47f0,#b566ff);
+  }
+  .btn.lottery {
+    background:linear-gradient(135deg,#f59e0b,#f97316);
+    border-color:transparent; font-weight:700;
+    color:#fff;
+    box-shadow:0 8px 24px rgba(245,158,11,.45);
+  }
+  .btn.lottery:hover {
+    box-shadow:0 10px 30px rgba(245,158,11,.62);
+    background:linear-gradient(135deg,#fbbf24,#fb923c);
+  }
+  .btn.skin-btn {
+    background:linear-gradient(135deg,#ec4899,#8b5cf6);
+    border-color:transparent; font-weight:700;
+    color:#fff;
+    box-shadow:0 8px 24px rgba(236,72,153,.45);
+    display:flex; align-items:center; justify-content:center; gap:7px;
+  }
+  .btn.skin-btn:hover {
+    box-shadow:0 10px 30px rgba(236,72,153,.62);
+    background:linear-gradient(135deg,#f472b6,#a78bfa);
+  }
+  .btn.skin-btn .skin-dot {
+    width:15px; height:15px;
+    border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.7);
+    background:#f7d3b0;
+    flex-shrink:0;
+    transition:background .25s;
+  }
+  .btn.lottery-ten {
+    background:linear-gradient(135deg,#dc2626,#f43f5e);
+    border-color:transparent; font-weight:700;
+    color:#fff;
+    box-shadow:0 8px 24px rgba(220,38,38,.45);
+  }
+  .btn.lottery-ten:hover {
+    box-shadow:0 10px 30px rgba(220,38,38,.62);
+    background:linear-gradient(135deg,#ef4444,#fb7185);
+  }
+  .btn.danger { border-color:rgba(244,63,94,.45); background:rgba(244,63,94,.1); color:#fecdd3; }
+  .btn.danger:hover { background:rgba(244,63,94,.22); }
+  .btn:disabled {
+    opacity:0.45; cursor:not-allowed;
+    transform:none !important; box-shadow:none !important;
+  }
+
+  /* ---------- 面板 ---------- */
+  .panel {
+    background:rgba(22,13,44,.82);
+    border:1px solid rgba(167,139,250,.22);
+    border-radius:16px;
+    padding:clamp(16px,3.5vw,24px) clamp(16px,3.5vw,26px);
+    width:100%; max-width:340px;
+    box-shadow:0 20px 55px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+    display:flex; flex-direction:column;
+    gap:14px; align-items:center;
+  }
+  .panel.wide { max-width:360px; }
+  .panel h2 {
+    font-size:clamp(18px,4.5vw,22px);
+    color:#f3ecff; font-weight:700; letter-spacing:1px;
+  }
+
+  /* ---------- 设置项 ---------- */
+  .setting-group { width:100%; }
+  .setting-label {
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:13px; color:rgba(255,255,255,.72);
+    margin-bottom:8px;
+  }
+  .setting-label .val { color:#a78bfa; font-weight:700; font-size:12px; }
+  .opt-row { display:flex; gap:7px; }
+  .opt {
+    flex:1; padding:9px 0;
+    border-radius:9px;
+    border:1px solid rgba(167,139,250,.28);
+    background:rgba(255,255,255,.04);
+    color:rgba(255,255,255,.65);
+    font-size:14px; font-family:inherit;
+    cursor:pointer; transition:all .16s;
+    touch-action:manipulation;
+  }
+  .opt:hover { background:rgba(167,139,250,.14); }
+  .opt.active {
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    border-color:transparent; color:#fff; font-weight:700;
+    box-shadow:0 4px 16px rgba(139,92,246,.45);
+  }
+  .setting-desc {
+    margin-top:8px; font-size:11px;
+    color:rgba(255,255,255,.35);
+    line-height:1.5; min-height:18px;
+  }
+
+  /* ---------- 音量条 ---------- */
+  input[type=range] {
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:6px;
+    border-radius:3px;
+    background:rgba(255,255,255,.13);
+    outline:none; cursor:pointer;
+    touch-action:pan-x;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none;
+    width:20px; height:20px; border-radius:50%;
+    background:linear-gradient(135deg,#d8b4fe,#7c3aed);
+    box-shadow:0 0 13px rgba(167,139,250,.8);
+    cursor:pointer; border:none;
+  }
+  input[type=range]::-moz-range-thumb {
+    width:20px; height:20px; border-radius:50%;
+    background:linear-gradient(135deg,#d8b4fe,#7c3aed);
+    box-shadow:0 0 13px rgba(167,139,250,.8);
+    cursor:pointer; border:none;
+  }
+
+  /* ---------- 排行榜 ---------- */
+  .lb-list {
+    list-style:none; width:100%;
+    max-height:min(300px, 44vh);
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding-right:4px;
+  }
+  .lb-list::-webkit-scrollbar { width:4px; }
+  .lb-list::-webkit-scrollbar-thumb { background:rgba(167,139,250,.35); border-radius:3px; }
+  .lb-list li {
+    display:flex; align-items:center;
+    padding:9px 10px; border-radius:9px;
+    background:rgba(255,255,255,.045);
+    margin-bottom:5px; font-size:13px;
+    animation:fadeUp .25s ease;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .lb-list li.top1 { background:linear-gradient(90deg, rgba(251,191,36,.2), rgba(251,191,36,.03)); }
+  .lb-list li.top2 { background:linear-gradient(90deg, rgba(203,213,225,.15), rgba(203,213,225,.02)); }
+  .lb-list li.top3 { background:linear-gradient(90deg, rgba(217,119,6,.16), rgba(217,119,6,.02)); }
+  .lb-list li .rank { width:28px; text-align:center; font-weight:700; color:rgba(255,255,255,.55); }
+  .lb-list li .sc { flex:1; font-weight:700; color:#fbbf24; font-size:15px; padding-left:4px; }
+  .lb-list li .df {
+    font-size:10px; color:#c4b5fd;
+    padding:2px 7px; border-radius:5px;
+    background:rgba(167,139,250,.16);
+    margin-right:8px;
+  }
+  .lb-list li .dt { font-size:10px; color:rgba(255,255,255,.3); width:36px; text-align:right; }
+  .lb-empty {
+    text-align:center; color:rgba(255,255,255,.32);
+    font-size:12px; padding:22px 0;
+  }
+  .row { display:flex; gap:9px; width:100%; }
+
+  .score-big {
+    font-size:clamp(40px,10vw,56px);
+    font-weight:800; line-height:1;
+    background:linear-gradient(135deg,#fde68a,#fbbf24,#f59e0b);
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent;
+    filter:drop-shadow(0 0 20px rgba(251,191,36,.5));
+  }
+  .over-sub { font-size:13px; color:rgba(255,255,255,.5); min-height:17px; }
+  .over-total {
+    font-size:13px; color:rgba(255,255,255,.55);
+    padding:5px 13px; border-radius:8px;
+    background:rgba(167,139,250,.1);
+    border:1px solid rgba(167,139,250,.2);
+  }
+  .over-total span { color:#fbbf24; font-weight:700; font-size:14px; }
+
+  /* ---------- 抽奖 ---------- */
+  .lottery-balance {
+    font-size:13px; color:rgba(255,255,255,.6);
+    text-align:center;
+  }
+  .lottery-balance span {
+    font-size:24px; font-weight:800;
+    color:#fbbf24; margin-left:6px;
+    text-shadow:0 0 16px rgba(251,191,36,.45);
+  }
+  .discount-badge {
+    display:inline-block;
+    padding:4px 11px;
+    border-radius:8px;
+    background:rgba(251,191,36,.12);
+    border:1px solid rgba(251,191,36,.4);
+    color:#fbbf24;
+    font-size:11.5px;
+    font-weight:600;
+    text-align:center;
+  }
+  .discount-badge.hidden { display:none !important; }
+  .lottery-result {
+    width:100%; padding:14px;
+    border-radius:12px;
+    background:rgba(255,255,255,.05);
+    border:1px dashed rgba(167,139,250,.3);
+    text-align:center;
+    font-size:15px; font-weight:600;
+    color:rgba(255,255,255,.7);
+    min-height:50px;
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s;
+  }
+  .lottery-result.spinning {
+    color:#a78bfa;
+    animation:lotterySpin .55s linear infinite;
+  }
+  @keyframes lotterySpin {
+    0%,100% { opacity:1; }
+    50% { opacity:0.35; }
+  }
+  .lottery-result.hidden { display:none !important; }
+
+  .draw-result-list {
+    width:100%;
+    display:grid;
+    gap:5px;
+    max-height:min(220px, 32vh);
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:4px;
+    border-radius:10px;
+    background:rgba(255,255,255,.03);
+  }
+  .draw-result-list::-webkit-scrollbar { width:4px; }
+  .draw-result-list::-webkit-scrollbar-thumb { background:rgba(167,139,250,.35); border-radius:3px; }
+  .draw-result-list.hidden { display:none !important; }
+  .draw-result-list.single { grid-template-columns:1fr; }
+  .draw-result-list.multi { grid-template-columns:1fr 1fr; }
+  .draw-result-item {
+    display:flex; align-items:center; gap:5px;
+    padding:7px 9px;
+    border-radius:8px;
+    background:rgba(255,255,255,.05);
+    font-size:12px;
+    animation:popIn .35s ease;
+  }
+  .draw-result-item.win { background:rgba(74,222,128,.1); color:#4ade80; }
+  .draw-result-item.big { background:rgba(251,191,36,.15); color:#fbbf24; }
+  .draw-result-item.retry { background:rgba(167,139,250,.1); color:#c4b5fd; }
+  .draw-result-item .dr-icon { font-size:15px; flex-shrink:0; }
+  .draw-result-item .dr-name { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @keyframes popIn {
+    0% { transform:scale(0.85); opacity:0; }
+    60% { transform:scale(1.05); }
+    100% { transform:scale(1); opacity:1; }
+  }
+
+  .lottery-prizes {
+    width:100%;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .prize-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:6px 11px;
+    border-radius:8px;
+    background:rgba(255,255,255,.035);
+    font-size:12px;
+    color:rgba(255,255,255,.65);
+  }
+  .prize-row .prize-icon { margin-right:5px; }
+  .prize-row span:last-child { font-weight:700; color:#a78bfa; }
+  .prize-row.big-prize span:last-child { color:#fb923c; }
+  .lottery-note {
+    font-size:10px;
+    color:rgba(255,255,255,.3);
+    text-align:center;
+    line-height:1.5;
+  }
+
+  /* ---------- 皮肤选择 ---------- */
+  .skin-grid {
+    width:100%;
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:9px;
+  }
+  .skin-card {
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+    padding:10px 4px 8px;
+    border-radius:12px;
+    border:1.5px solid rgba(167,139,250,.22);
+    background:rgba(255,255,255,.035);
+    color:rgba(255,255,255,.75);
+    font-family:inherit;
+    font-size:11.5px;
+    cursor:pointer;
+    transition:all .18s;
+    touch-action:manipulation;
+    overflow:hidden;
+  }
+  .skin-card:hover { background:rgba(167,139,250,.12); transform:translateY(-2px); }
+  .skin-card.active {
+    border-color:#f472b6;
+    background:rgba(236,72,153,.12);
+    color:#fff;
+    box-shadow:0 0 22px rgba(236,72,153,.4);
+  }
+  .skin-avatar {
+    width:52px; height:60px;
+    position:relative;
+    display:block;
+    transition:transform .2s;
+  }
+  .skin-card:hover .skin-avatar { transform:scale(1.06); }
+  .skin-avatar .sa-head {
+    position:absolute;
+    top:0; left:50%;
+    transform:translateX(-50%);
+    width:24px; height:24px;
+    border-radius:50%;
+  }
+  .skin-avatar .sa-body {
+    position:absolute;
+    top:22px; left:50%;
+    transform:translateX(-50%);
+    width:20px; height:22px;
+    border-radius:6px;
+  }
+  .skin-avatar .sa-legs {
+    position:absolute;
+    top:42px; left:50%;
+    transform:translateX(-50%);
+    width:18px; height:13px;
+    border-radius:0 0 4px 4px;
+  }
+  .skin-avatar .sa-item {
+    position:absolute;
+    top:24px; right:1px;
+    width:13px; height:13px;
+    border-radius:50%;
+    box-shadow:0 0 8px currentColor;
+  }
+  .skin-name { font-weight:600; font-size:12px; }
+  .skin-tag {
+    font-size:9px;
+    color:rgba(255,255,255,.4);
+    letter-spacing:1px;
+  }
+  .skin-use-tag {
+    display:none;
+    position:absolute;
+    bottom:0; left:0; right:0;
+    padding:2.5px 0;
+    background:linear-gradient(135deg,#ec4899,#8b5cf6);
+    color:#fff;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:2px;
+    text-align:center;
+  }
+  .skin-card.active .skin-use-tag { display:block; }
+
+  /* ---------- 道具背包 ---------- */
+  .items-score {
+    font-size:13px; color:rgba(255,255,255,.6);
+    text-align:center; padding:3px 0;
+  }
+  .items-score span {
+    font-size:22px; font-weight:800;
+    color:#fbbf24; margin-left:6px;
+    text-shadow:0 0 14px rgba(251,191,36,.4);
+  }
+  .use-toast {
+    font-size:12.5px; color:#4ade80;
+    text-align:center; min-height:19px;
+    opacity:0; transition:opacity .25s ease;
+    font-weight:600;
+  }
+  .use-toast.show { opacity:1; }
+  .items-list {
+    width:100%;
+    display:flex; flex-direction:column; gap:8px;
+    max-height:min(300px, 42vh);
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding-right:2px;
+  }
+  .items-list::-webkit-scrollbar { width:4px; }
+  .items-list::-webkit-scrollbar-thumb { background:rgba(167,139,250,.35); border-radius:3px; }
+  .item-row {
+    display:flex; align-items:center; gap:9px;
+    padding:9px 11px;
+    border-radius:10px;
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(167,139,250,.15);
+    animation:fadeUp .25s ease;
+  }
+  .item-row.empty { opacity:0.5; }
+  .item-icon {
+    width:34px; height:34px;
+    border-radius:9px;
+    background:rgba(167,139,250,.12);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; flex-shrink:0;
+  }
+  .item-info { flex:1; min-width:0; }
+  .item-name { font-size:13px; font-weight:600; color:#f3ecff; }
+  .item-desc { font-size:10.5px; color:rgba(255,255,255,.4); margin-top:2px; }
+  .item-count { font-size:14px; font-weight:700; color:#fbbf24; min-width:28px; text-align:center; }
+  .item-use-btn {
+    padding:6px 12px;
+    border-radius:8px; border:none;
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    color:#fff; font-size:12px; font-weight:600;
+    font-family:inherit; cursor:pointer;
+    transition:all .16s; touch-action:manipulation;
+  }
+  .item-use-btn:hover { background:linear-gradient(135deg,#8b47f0,#b566ff); }
+  .item-use-btn:active { transform:scale(.95); }
+  .item-use-btn:disabled {
+    background:rgba(255,255,255,.08);
+    color:rgba(255,255,255,.3);
+    cursor:not-allowed; transform:none;
+  }
+  .items-empty-tip {
+    text-align:center;
+    color:rgba(255,255,255,.35);
+    font-size:12.5px; padding:26px 0;
+    line-height:1.8;
+  }
+
+  /* ---------- 窄屏适配（小屏竖屏手机） ---------- */
+  @media (max-width: 400px) {
+    .screen { padding:12px; }
+    .screen-inner { gap:10px; }
+    .panel { gap:11px; padding:14px 16px; max-width:320px; }
+    .panel.wide { max-width:330px; }
+    .panel h2 { font-size:17px; }
+    .btn { padding:10px 20px; }
+    .menu-btns { gap:8px; width:min(270px, 88%); }
+    .logo { letter-spacing:1px; }
+    .subtitle { letter-spacing:2px; }
+    .lb-list { max-height:38vh; }
+    .map-preview { height:36px; }
+    .map-btn { font-size:11px; padding:6px 4px 8px; gap:4px; }
+    .map-title { font-size:11px; }
+    .ctrl-btn { width:30px; height:30px; font-size:13px; }
+    .skin-grid { gap:7px; }
+    .skin-card { padding:8px 3px 6px; gap:4px; }
+    .skin-avatar { width:46px; height:54px; }
+    .skin-avatar .sa-head { width:22px; height:22px; }
+    .skin-avatar .sa-body { top:20px; width:18px; height:20px; }
+    .skin-avatar .sa-legs { top:38px; width:16px; height:12px; }
+    .skin-avatar .sa-item { width:11px; height:11px; top:22px; }
+    .skin-name { font-size:11px; }
+    .skin-tag { font-size:8.5px; }
+    .item-icon { width:30px; height:30px; font-size:16px; }
+    .item-name { font-size:12.5px; }
+    .item-use-btn { padding:5px 10px; font-size:11.5px; }
+    .items-score span { font-size:20px; }
+    .draw-result-list { max-height:180px; }
+    .draw-result-item { font-size:11.5px; padding:6px 8px; }
+    .draw-result-item .dr-icon { font-size:13px; }
+  }
+
+  @media (max-width: 340px) {
+    .screen { padding:8px; }
+    .panel { gap:9px; padding:12px 12px; max-width:300px; }
+    .logo { font-size:26px; }
+    .skin-grid { gap:5px; }
+    .skin-avatar { width:40px; height:48px; }
+    .skin-avatar .sa-head { width:19px; height:19px; }
+    .skin-avatar .sa-body { top:17px; width:16px; height:18px; }
+    .skin-avatar .sa-legs { top:33px; width:14px; height:10px; }
+    .skin-avatar .sa-item { width:9px; height:9px; top:19px; }
+    .skin-name { font-size:10.5px; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="480" height="800"></canvas>
+
+  <div id="gameControls" class="hidden">
+    <button id="gameItemsBtn" class="ctrl-btn" title="道具背包">👜<span id="itemsBadge" class="badge hidden">0</span></button>
+    <button id="gameSettingsBtn" class="ctrl-btn" title="设置">⚙</button>
+  </div>
+
+  <div id="menuScreen" class="screen">
+    <div class="screen-inner">
+      <div class="logo">蔡徐坤跳一跳</div>
+      <div class="subtitle">按住蓄力 · 松开起跳</div>
+
+      <div class="map-panel">
+        <div class="map-title">选 择 你 的 地 图</div>
+        <div class="map-row" id="mapRow">
+          <button class="map-btn" data-theme="night"><span class="map-preview night"></span><span class="map-name">星空夜曲</span></button>
+          <button class="map-btn" data-theme="snow"><span class="map-preview snow"></span><span class="map-name">雪地冰原</span></button>
+          <button class="map-btn" data-theme="fire"><span class="map-preview fire"></span><span class="map-name">烈焰火山</span></button>
+        </div>
+      </div>
+
+      <div class="menu-btns">
+        <button class="btn primary" id="btnStart">开始游戏</button>
+        <button class="btn skin-btn" id="btnSkins">
+          <span class="skin-dot" id="skinDot"></span>
+          <span>🎭 皮肤 · <span id="btnSkinName">坤坤</span></span>
+        </button>
+        <div class="menu-row">
+          <button class="btn lottery" id="btnLottery">🎰 抽奖</button>
+          <button class="btn" id="btnLeaderboard">🏆 排行榜</button>
+        </div>
+        <button class="btn" id="btnSettings">⚙ 设置</button>
+      </div>
+      <div class="hint">
+        最高分 <span id="menuBest">0</span> · 总分 <span class="total-span" id="menuTotal">0</span> · 道具 <span class="item-span" id="menuItems">0</span><br>
+        当前皮肤 <span class="skin-span" id="menuSkinName">坤坤</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="skinsScreen" class="screen hidden">
+    <div class="screen-inner">
+      <div class="panel wide">
+        <h2>🎭 皮肤选择</h2>
+        <div class="skin-grid" id="skinGrid"></div>
+        <button class="btn primary" id="btnSkinsBack">返 回</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settingsScreen" class="screen hidden">
+    <div class="screen-inner">
+      <div class="panel">
+        <h2>⚙ 设置</h2>
+        <div class="setting-group">
+          <div class="setting-label">难度</div>
+          <div class="opt-row" id="diffRow">
+            <button class="opt" data-diff="low">低</button>
+            <button class="opt" data-diff="high">高</button>
+            <button class="opt" data-diff="ultra">超高</button>
+          </div>
+          <div class="setting-desc" id="diffDesc"></div>
+        </div>
+        <div class="setting-group">
+          <div class="setting-label">音量 <span class="val" id="volVal">70%</span></div>
+          <input type="range" id="volSlider" min="0" max="100" value="70">
+        </div>
+        <button class="btn primary" id="btnSettingsBack">返 回</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="leaderboardScreen" class="screen hidden">
+    <div class="screen-inner">
+      <div class="panel">
+        <h2>🏆 排行榜</h2>
+        <ol class="lb-list" id="lbList"></ol>
+        <div class="row">
+          <button class="btn danger" id="btnClearBoard">清空</button>
+          <button class="btn primary" id="btnLbBack">返回</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lotteryScreen" class="screen hidden">
+    <div class="screen-inner">
+      <div class="panel">
+        <h2>🎰 抽 奖</h2>
+        <div class="lottery-balance">当前总分 <span id="lotteryBalance">0</span></div>
+        <div class="discount-badge hidden" id="discountBadge">⚡ 下次单抽仅需 10 分（剩余 <span id="discountCount">0</span> 次）</div>
+
+        <div class="lottery-result" id="lotteryResult">点击下方按钮开始抽奖</div>
+        <div class="draw-result-list hidden" id="drawResultList"></div>
+
+        <button class="btn lottery" id="btnDraw">单抽（消耗 20 分）</button>
+        <button class="btn lottery-ten" id="btnTenDraw">十连抽（消耗 100 分）</button>
+
+        <div class="lottery-prizes" id="lotteryPrizes"></div>
+        <div class="lottery-note">单抽 20 分 · 十连抽 100 分 · 抽到“再来一次”下次单抽仅需 10 分</div>
+
+        <button class="btn" id="btnLotteryBack">返回主页</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="itemsScreen" class="screen hidden">
+    <div class="screen-inner">
+      <div class="panel">
+        <h2>🎒 道具背包</h2>
+        <div class="items-score">当局分数 <span id="itemsScore">0</span></div>
+        <div class="use-toast" id="useToast"></div>
+        <div class="items-list" id="itemsList"></div>
+        <button class="btn primary" id="btnItemsBack">返回游戏</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="overScreen" class="screen hidden">
+    <div class="screen-inner">
+      <div class="panel">
+        <h2 id="overTitle">哎哟你干嘛~</h2>
+        <div class="score-big" id="overScore">0</div>
+        <div class="over-total">总分 <span id="overTotal">0</span></div>
+        <div class="over-sub" id="overRank"></div>
+        <div class="row">
+          <button class="btn primary" id="btnRetry">再来一局</button>
+          <button class="btn" id="btnHome">主页</button>
+        </div>
+        <button class="btn" id="btnOverLeaderboard">查看排行榜</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* =========================================================
+   基础
+   ========================================================= */
+const cvs = document.getElementById('game');
+const ctx = cvs.getContext('2d');
+const W = cvs.width, H = cvs.height;
+const gameControls = document.getElementById('gameControls');
+const gameSettingsBtn = document.getElementById('gameSettingsBtn');
+const gameItemsBtn = document.getElementById('gameItemsBtn');
+const itemsBadge = document.getElementById('itemsBadge');
+
+const FONT = '-apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* =========================================================
+   皮肤配置（6 个：原版 + 5 新皮肤）
+   ========================================================= */
+const SKINS = {
+  kun: {
+    name: '坤坤', tag: '经典',
+    hair: '#141414', skin: '#f7d3b0', shirt: '#f2f2f5',
+    overall: '#2b2b3d', shoe: '#ff4d6d',
+    item: 'basketball', accent: '#e88a2e'
+  },
+  fire: {
+    name: '火焰战士', tag: '烈火',
+    hair: '#3d1a0a', skin: '#f0c090', shirt: '#f97316',
+    overall: '#1f0704', shoe: '#dc2626',
+    item: 'fire', accent: '#fb923c'
+  },
+  ice: {
+    name: '冰雪精灵', tag: '寒霜',
+    hair: '#c9e8ff', skin: '#f5e6d8', shirt: '#e0f2fe',
+    overall: '#2f4f6e', shoe: '#7dd3fc',
+    item: 'snowball', accent: '#7dd3fc'
+  },
+  shadow: {
+    name: '暗夜刺客', tag: '影袭',
+    hair: '#1a0a2e', skin: '#d4b896', shirt: '#2d1b4e',
+    overall: '#0f0620', shoe: '#7c3aed',
+    item: 'dagger', accent: '#a78bfa'
+  },
+  gold: {
+    name: '黄金传说', tag: '至尊',
+    hair: '#8b6914', skin: '#f5d5a8', shirt: '#fde68a',
+    overall: '#b45309', shoe: '#f59e0b',
+    item: 'coin', accent: '#fbbf24'
+  },
+  neon: {
+    name: '霓虹赛博', tag: '未来',
+    hair: '#00ffff', skin: '#e8d5c4', shirt: '#1a0033',
+    overall: '#0d001a', shoe: '#ff00ff',
+    item: 'orb', accent: '#00ffff'
+  }
+};
+const SKIN_ORDER = ['kun', 'fire', 'ice', 'shadow', 'gold', 'neon'];
+
+/* =========================================================
+   难度 / 地图 / 道具 / 抽奖
+   ========================================================= */
+const DIFFICULTIES = {
+  low:   { name:'低',   gapMin:28, gapMax:78,  wMin:72, wMax:112, chargeTime:900, maxVx:8.0, jumpVy:-13,
+           desc:'平台宽、间距小、蓄力慢，轻松上手' },
+  high:  { name:'高',   gapMin:36, gapMax:112, wMin:52, wMax:92,  chargeTime:800, maxVx:8.5, jumpVy:-13,
+           desc:'标准挑战，平台与间距适中' },
+  ultra: { name:'超高', gapMin:48, gapMax:150, wMin:38, wMax:70,  chargeTime:720, maxVx:9.5, jumpVy:-13,
+           desc:'平台窄、间距大、蓄力快，考验手感' }
+};
+
+const THEMES = {
+  night: { name:'星空夜曲', bg:['#0b0620','#1a1040','#2a1550'],
+    glow:'rgba(150,90,255,0.22)', glowEnd:'rgba(150,90,255,0)',
+    platformTop:'#3b2a6e', platformBottom:'#150c2c', edge:'#a78bfa',
+    particleType:'star', particleColor:'#ffffff', particleCount:90 },
+  snow:  { name:'雪地冰原', bg:['#08131f','#102a42','#1d4460'],
+    glow:'rgba(125,211,252,0.16)', glowEnd:'rgba(125,211,252,0)',
+    platformTop:'#2f4f6e', platformBottom:'#0a1624', edge:'#7dd3fc',
+    particleType:'snow', particleColor:'#e0f2fe', particleCount:80 },
+  fire:  { name:'烈焰火山', bg:['#150404','#2d0808','#4a1005'],
+    glow:'rgba(251,146,60,0.20)', glowEnd:'rgba(251,146,60,0)',
+    platformTop:'#6b2418', platformBottom:'#1f0704', edge:'#fb923c',
+    particleType:'fire', particleColor:'#fdba74', particleCount:65 }
+};
+
+const ITEMS = {
+  add10:   { id:'add10',   name:'+10 分卡',   icon:'🃏', desc:'使用后当局分数 +10',   amount:10 },
+  add50:   { id:'add50',   name:'+50 分卡',   icon:'🎴', desc:'使用后当局分数 +50',   amount:50 },
+  add10000:{ id:'add10000',name:'+10000 分卡',icon:'👑', desc:'使用后当局分数 +10000',amount:10000 }
+};
+const ITEM_ORDER = ['add10', 'add50', 'add10000'];
+
+const LOTTERY_COST = 20;
+const LOTTERY_DISCOUNT_COST = 10;
+const TEN_DRAW_COST = 100;
+
+const LOTTERY_PRIZES = [
+  { id:'add10',    type:'item',  weight:10    },
+  { id:'add50',    type:'item',  weight:5     },
+  { id:'add10000', type:'item',  weight:0.1   },
+  { id:'retry',    type:'retry', weight:88.88 }
+];
+const TOTAL_WEIGHT = LOTTERY_PRIZES.reduce((s,p) => s + p.weight, 0);
+
+/* =========================================================
+   持久化
+   ========================================================= */
+function lsGet(k, def) {
+  try { const v = localStorage.getItem(k); return v === null ? def : v; }
+  catch (e) { return def; }
+}
+function lsSet(k, v) {
+  try { localStorage.setItem(k, v); } catch (e) {}
+}
+
+let difficulty = lsGet('kun_jump_diff', 'high');
+if (!DIFFICULTIES[difficulty]) difficulty = 'high';
+
+let theme = lsGet('kun_jump_theme', 'night');
+if (!THEMES[theme]) theme = 'night';
+
+let currentSkin = lsGet('kun_jump_skin', 'kun');
+if (!SKINS[currentSkin]) currentSkin = 'kun';
+
+let soundVolume = 0.7;
+{
+  const sv = lsGet('kun_jump_vol', null);
+  if (sv !== null) { const n = +sv; if (!isNaN(n)) soundVolume = clamp(n, 0, 1); }
+}
+
+let best = +(lsGet('kun_jump_best', 0)) || 0;
+let totalScore = +(lsGet('kun_jump_total', 0)) || 0;
+if (totalScore < 0) totalScore = 0;
+
+let inventory = { add10:0, add50:0, add10000:0 };
+try {
+  const inv = JSON.parse(lsGet('kun_jump_inventory', '{}'));
+  if (inv && typeof inv === 'object') {
+    for (const id of ITEM_ORDER) inventory[id] = Math.max(0, parseInt(inv[id], 10) || 0);
+  }
+} catch (e) {}
+
+let discountCount = Math.max(0, parseInt(lsGet('kun_jump_discount', '0'), 10) || 0);
+
+/* =========================================================
+   竖屏游戏常量
+   ========================================================= */
+const GROUND_Y = 620;       // 平台顶面
+const GRAVITY = 0.8;
+const FLIGHT_FRAMES = 32;
+const CAM_OFFSET = 150;     // 玩家固定在屏幕左侧 150px 处
+
+/* =========================================================
+   状态
+   ========================================================= */
+let platforms = [], floaters = [], particles = [], bgParticles = [];
+let cameraX = 0, score = 0, combo = 0, currentIndex = 0;
+
+let uiState = 'menu';
+let playerState = 'idle';
+let player = {};
+let overDelay = 0;
+let overPanelShown = false;
+let leaderboardBack = 'menu';
+let settingsBack = 'menu';
+let lotteryBusy = false;
+let toastTimer = null;
+
+/* =========================================================
+   音效
+   ========================================================= */
+let audioCtx = null;
+function beep(freq, dur, type = 'sine', vol = 0.07) {
+  const v = vol * soundVolume;
+  if (v <= 0.0005) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    g.gain.setValueAtTime(v, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  } catch (e) {}
+}
+
+/* =========================================================
+   背景粒子
+   ========================================================= */
+function initBgParticles() {
+  const th = THEMES[theme];
+  bgParticles = [];
+  for (let i = 0; i < th.particleCount; i++) {
+    bgParticles.push({
+      x: Math.random() * W,
+      y: th.particleType === 'star'
+        ? Math.random() * (GROUND_Y - 60)
+        : Math.random() * H,
+      r: th.particleType === 'snow' ? rand(0.8,2.6)
+        : th.particleType === 'fire' ? rand(1,2.8)
+        : rand(0.4,1.5),
+      ph: Math.random() * Math.PI * 2,
+      vy: th.particleType === 'snow' ? rand(0.3,1.1)
+        : th.particleType === 'fire' ? rand(0.5,1.6)
+        : 0
+    });
+  }
+}
+
+function updateBgParticles(dt, t) {
+  const th = THEMES[theme];
+  const k = Math.min(dt, 50) / 16.67;
+  for (const s of bgParticles) {
+    if (th.particleType === 'snow') {
+      s.y += s.vy * k;
+      s.x += Math.sin(t * 0.9 + s.ph) * 0.35 * k;
+      if (s.y > H + 6) { s.y = -6; s.x = Math.random() * W; }
+      if (s.x < -10) s.x = W + 10;
+      else if (s.x > W + 10) s.x = -10;
+    } else if (th.particleType === 'fire') {
+      s.y -= s.vy * k;
+      s.x += Math.sin(t * 1.6 + s.ph) * 0.3 * k;
+      if (s.y < -6) { s.y = H + 6; s.x = Math.random() * W; }
+    }
+  }
+}
+
+function roundRect(x, y, w, h, r) {
+  if (w <= 0 || h <= 0) { ctx.beginPath(); return; }
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/* =========================================================
+   平台 / 重置
+   ========================================================= */
+function addPlatform() {
+  const cfg = DIFFICULTIES[difficulty];
+  const last = platforms[platforms.length - 1];
+  const gap = rand(cfg.gapMin, cfg.gapMax);
+  const w = rand(cfg.wMin, cfg.wMax);
+  platforms.push({ x: last.x + last.w + gap, w: w });
+}
+
+function reset() {
+  platforms = []; floaters = []; particles = [];
+  cameraX = 0; score = 0; combo = 0; currentIndex = 0;
+  overDelay = 0; overPanelShown = false;
+  platforms.push({ x: 60, w: 110 });
+  for (let i = 0; i < 5; i++) addPlatform();
+  player = { x: 115, y: GROUND_Y, vx:0, vy:0, rot:0, rotSpeed:0, charge:0, sx:1, sy:1 };
+  playerState = 'idle';
+}
+
+function addFloater(x, y, text, color) {
+  floaters.push({ x, y, text, color, life: 1 });
+}
+function spawnParticles(x, y, color, n) {
+  for (let i = 0; i < n; i++) {
+    particles.push({ x, y, vx: rand(-3.5,3.5), vy: rand(-4.5,-1), life: 1, color });
+  }
+}
+
+/* =========================================================
+   保存
+   ========================================================= */
+function saveTotalScore() { lsSet('kun_jump_total', totalScore); }
+function saveInventory()  { lsSet('kun_jump_inventory', JSON.stringify(inventory)); }
+function saveDiscount()   { lsSet('kun_jump_discount', discountCount); }
+
+function totalItemCount() {
+  return ITEM_ORDER.reduce((s, id) => s + (inventory[id] || 0), 0);
+}
+
+/* =========================================================
+   屏幕管理
+   ========================================================= */
+const screens = {
+  menu:        document.getElementById('menuScreen'),
+  skins:       document.getElementById('skinsScreen'),
+  settings:    document.getElementById('settingsScreen'),
+  leaderboard: document.getElementById('leaderboardScreen'),
+  over:        document.getElementById('overScreen'),
+  lottery:     document.getElementById('lotteryScreen'),
+  items:       document.getElementById('itemsScreen')
+};
+
+function hideAllScreens() {
+  for (const k in screens) screens[k].classList.add('hidden');
+  gameControls.classList.add('hidden');
+}
+function showScreen(name) {
+  hideAllScreens();
+  if (screens[name]) screens[name].classList.remove('hidden');
+}
+function enterGameView() {
+  hideAllScreens();
+  gameControls.classList.remove('hidden');
+  updateItemsBadge();
+}
+
+/* =========================================================
+   UI 刷新
+   ========================================================= */
+function updateItemsBadge() {
+  const n = totalItemCount();
+  if (n > 0) {
+    itemsBadge.textContent = n > 99 ? '99+' : n;
+    itemsBadge.classList.remove('hidden');
+  } else {
+    itemsBadge.classList.add('hidden');
+  }
+}
+
+function updateTotalScoreUI() {
+  const mt = document.getElementById('menuTotal');
+  if (mt) mt.textContent = totalScore;
+  const lb = document.getElementById('lotteryBalance');
+  if (lb) lb.textContent = totalScore;
+  const mi = document.getElementById('menuItems');
+  if (mi) mi.textContent = totalItemCount();
+  updateLotteryUI();
+  updateItemsBadge();
+}
+
+function updateLotteryUI() {
+  if (lotteryBusy) return;
+
+  const btnDraw = document.getElementById('btnDraw');
+  const btnTen = document.getElementById('btnTenDraw');
+  const discountBadge = document.getElementById('discountBadge');
+  const discountCountEl = document.getElementById('discountCount');
+
+  const singleCost = discountCount > 0 ? LOTTERY_DISCOUNT_COST : LOTTERY_COST;
+
+  if (discountCount > 0) {
+    discountBadge.classList.remove('hidden');
+    discountCountEl.textContent = discountCount;
+  } else {
+    discountBadge.classList.add('hidden');
+  }
+
+  if (totalScore < singleCost) {
+    btnDraw.disabled = true;
+    btnDraw.textContent = '分数不足（单抽需 ' + singleCost + ' 分）';
+  } else {
+    btnDraw.disabled = false;
+    btnDraw.textContent = discountCount > 0
+      ? '单抽（消耗 10 分 · 半价）'
+      : '单抽（消耗 20 分）';
+  }
+
+  if (totalScore < TEN_DRAW_COST) {
+    btnTen.disabled = true;
+    btnTen.textContent = '分数不足（十连需 100 分）';
+  } else {
+    btnTen.disabled = false;
+    btnTen.textContent = '十连抽（消耗 100 分）';
+  }
+}
+
+function refreshMenuBest() {
+  document.getElementById('menuBest').textContent = best;
+}
+function syncMapUI() {
+  document.querySelectorAll('.map-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.theme === theme);
+  });
+}
+function syncSkinUI() {
+  document.querySelectorAll('.skin-card').forEach(b => {
+    b.classList.toggle('active', b.dataset.skin === currentSkin);
+  });
+  const nameEl = document.getElementById('menuSkinName');
+  if (nameEl) nameEl.textContent = SKINS[currentSkin].name;
+  const btnName = document.getElementById('btnSkinName');
+  if (btnName) btnName.textContent = SKINS[currentSkin].name;
+  const dot = document.getElementById('skinDot');
+  if (dot) dot.style.background = SKINS[currentSkin].skin;
+}
+
+/* =========================================================
+   皮肤卡片渲染
+   ========================================================= */
+function renderSkinGrid() {
+  const grid = document.getElementById('skinGrid');
+  grid.innerHTML = SKIN_ORDER.map(id => {
+    const s = SKINS[id];
+    const headBg = `linear-gradient(180deg, ${s.hair} 0%, ${s.hair} 52%, ${s.skin} 52%, ${s.skin} 100%)`;
+    let itemColor = s.accent;
+    if (s.item === 'basketball') itemColor = '#e88a2e';
+    else if (s.item === 'fire') itemColor = '#fb923c';
+    else if (s.item === 'snowball') itemColor = '#e0f2fe';
+    else if (s.item === 'dagger') itemColor = '#c0c0c0';
+    else if (s.item === 'coin') itemColor = '#fbbf24';
+    else if (s.item === 'orb') itemColor = '#00ffff';
+    return (
+      '<button class="skin-card" data-skin="' + id + '">' +
+        '<div class="skin-avatar">' +
+          '<div class="sa-head" style="background:' + headBg + ';"></div>' +
+          '<div class="sa-body" style="background:' + s.shirt + ';"></div>' +
+          '<div class="sa-legs" style="background:' + s.overall + ';"></div>' +
+          '<div class="sa-item" style="background:' + itemColor + ';color:' + itemColor + ';"></div>' +
+        '</div>' +
+        '<div class="skin-name">' + s.name + '</div>' +
+        '<div class="skin-tag">' + s.tag + '</div>' +
+        '<div class="skin-use-tag">使用中</div>' +
+      '</button>'
+    );
+  }).join('');
+}
+
+function renderLotteryPrizes() {
+  const container = document.getElementById('lotteryPrizes');
+  const html = LOTTERY_PRIZES.map(p => {
+    const pct = (p.weight / TOTAL_WEIGHT * 100);
+    const pctText = pct >= 1 ? pct.toFixed(2) + '%' : pct.toFixed(3) + '%';
+    if (p.type === 'retry') {
+      return '<div class="prize-row"><span><span class="prize-icon">🔄</span>再来一次（下次单抽半价）</span><span>' + pctText + '</span></div>';
+    }
+    const item = ITEMS[p.id];
+    const cls = p.id === 'add10000' ? ' big-prize' : '';
+    return '<div class="prize-row' + cls + '"><span><span class="prize-icon">' + item.icon + '</span>' + item.name + '</span><span>' + pctText + '</span></div>';
+  }).join('');
+  container.innerHTML = html;
+}
+
+/* =========================================================
+   流程
+   ========================================================= */
+function startGame() {
+  reset();
+  uiState = 'game';
+  enterGameView();
+}
+
+function goHome() {
+  reset();
+  uiState = 'menu';
+  refreshMenuBest();
+  syncMapUI();
+  syncSkinUI();
+  updateTotalScoreUI();
+  showScreen('menu');
+}
+
+function gameOver() {
+  if (uiState !== 'game') return;
+  uiState = 'over';
+  playerState = 'idle';
+  overDelay = 700;
+  overPanelShown = false;
+  if (score > best) {
+    best = score;
+    lsSet('kun_jump_best', best);
+  }
+  if (score > 0) {
+    totalScore += score;
+    saveTotalScore();
+  }
+  beep(150, 0.42, 'sawtooth', 0.10);
+}
+
+/* =========================================================
+   排行榜
+   ========================================================= */
+function getBoard() {
+  let b;
+  try { b = JSON.parse(lsGet('kun_jump_board', '[]')); } catch (e) { b = []; }
+  if (!Array.isArray(b)) b = [];
+  return b.filter(x => x && typeof x.score === 'number');
+}
+
+function saveScore(sc, diffName) {
+  let board = getBoard();
+  const entry = { score: sc, diff: diffName, date: Date.now(), id: Math.random().toString(36).slice(2,10) };
+  if (sc > 0) board.push(entry);
+  board.sort((a, b) => b.score - a.score);
+  const top = board.slice(0, 10);
+  lsSet('kun_jump_board', JSON.stringify(top));
+  return { list: top, rank: top.findIndex(e => e.id === entry.id) };
+}
+
+function renderLeaderboard() {
+  const list = document.getElementById('lbList');
+  const board = getBoard().slice(0, 10);
+  if (board.length === 0) {
+    list.innerHTML = '<li class="lb-empty" style="display:block;background:none;">暂无记录，快去创造纪录吧！</li>';
+    return;
+  }
+  const medal = ['🥇', '🥈', '🥉'];
+  list.innerHTML = board.map((it, i) => {
+    const r = i < 3 ? medal[i] : (i + 1);
+    const d = new Date(it.date);
+    const ds = (d.getMonth() + 1) + '/' + d.getDate();
+    const cls = i < 3 ? ('top' + (i + 1)) : '';
+    return '<li class="' + cls + '">' +
+      '<span class="rank">' + r + '</span>' +
+      '<span class="sc">' + it.score + '</span>' +
+      '<span class="df">' + it.diff + '</span>' +
+      '<span class="dt">' + ds + '</span></li>';
+  }).join('');
+}
+
+function showOverPanel() {
+  overPanelShown = true;
+  const res = saveScore(score, DIFFICULTIES[difficulty].name);
+  document.getElementById('overScore').textContent = score;
+  document.getElementById('overTotal').textContent = totalScore;
+  const rankEl = document.getElementById('overRank');
+  if (res.rank >= 0) {
+    rankEl.textContent = '🏅 排行榜第 ' + (res.rank + 1) + ' 名';
+    rankEl.style.color = '#fbbf24';
+  } else {
+    rankEl.textContent = '再接再厉~';
+    rankEl.style.color = 'rgba(255,255,255,.45)';
+  }
+  const titleEl = document.getElementById('overTitle');
+  if (score === 0) titleEl.textContent = '菜就多练~';
+  else if (score <= 5) titleEl.textContent = '哎哟你干嘛~';
+  else if (score <= 15) titleEl.textContent = '不错嘛！';
+  else titleEl.textContent = '坤坤附体！';
+  showScreen('over');
+}
+
+function openSettings(from) {
+  settingsBack = from;
+  if (playerState === 'charging') {
+    playerState = 'idle'; player.charge = 0; player.sx = 1; player.sy = 1;
+  }
+  uiState = 'settings';
+  syncSettingsUI();
+  const backBtn = document.getElementById('btnSettingsBack');
+  backBtn.textContent = (from === 'game') ? '继续游戏' : '返 回';
+  showScreen('settings');
+}
+function closeSettings() {
+  if (settingsBack === 'game') { uiState = 'game'; enterGameView(); }
+  else goHome();
+}
+
+function openSkins() {
+  uiState = 'skins';
+  syncSkinUI();
+  showScreen('skins');
+}
+
+/* =========================================================
+   抽奖
+   ========================================================= */
+function drawPrize() {
+  let r = Math.random() * TOTAL_WEIGHT;
+  for (const p of LOTTERY_PRIZES) {
+    if (r < p.weight) return p;
+    r -= p.weight;
+  }
+  return LOTTERY_PRIZES[LOTTERY_PRIZES.length - 1];
+}
+
+function createResultItem(prize) {
+  const div = document.createElement('div');
+  if (prize.type === 'retry') {
+    div.className = 'draw-result-item retry';
+    div.innerHTML = '<span class="dr-icon">🔄</span><span class="dr-name">再来一次</span>';
+  } else {
+    const item = ITEMS[prize.id];
+    const cls = prize.id === 'add10000' ? 'big' : 'win';
+    div.className = 'draw-result-item ' + cls;
+    div.innerHTML = '<span class="dr-icon">' + item.icon + '</span><span class="dr-name">' + item.name + '</span>';
+  }
+  return div;
+}
+
+function prepareDrawUI(isTen) {
+  const btnDraw = document.getElementById('btnDraw');
+  const btnTen = document.getElementById('btnTenDraw');
+  const resultEl = document.getElementById('lotteryResult');
+  const listEl = document.getElementById('drawResultList');
+
+  btnDraw.disabled = true;
+  btnTen.disabled = true;
+  if (isTen) btnTen.textContent = '十连抽中...';
+  else btnDraw.textContent = '抽奖中...';
+
+  listEl.classList.add('hidden');
+  resultEl.classList.remove('hidden');
+  resultEl.className = 'lottery-result spinning';
+  resultEl.textContent = isTen ? '🎰 十连抽中...' : '🎰 抽奖中...';
+}
+
+function finishDrawUI(prizes) {
+  const resultEl = document.getElementById('lotteryResult');
+  const listEl = document.getElementById('drawResultList');
+
+  resultEl.classList.add('hidden');
+  resultEl.className = 'lottery-result';
+
+  listEl.classList.remove('hidden');
+  if (prizes.length === 1) {
+    listEl.classList.add('single');
+    listEl.classList.remove('multi');
+  } else {
+    listEl.classList.remove('single');
+    listEl.classList.add('multi');
+  }
+  listEl.innerHTML = '';
+  prizes.forEach(p => listEl.appendChild(createResultItem(p)));
+}
+
+function doSingleDraw() {
+  if (lotteryBusy) return;
+  const cost = discountCount > 0 ? LOTTERY_DISCOUNT_COST : LOTTERY_COST;
+  if (totalScore < cost) return;
+
+  lotteryBusy = true;
+  totalScore -= cost;
+  if (discountCount > 0) { discountCount--; saveDiscount(); }
+  saveTotalScore();
+  updateTotalScoreUI();
+  prepareDrawUI(false);
+  beep(600, 0.10, 'sine', 0.06);
+
+  setTimeout(() => {
+    const prize = drawPrize();
+    if (prize.type === 'retry') {
+      discountCount++;
+      saveDiscount();
+      beep(520, 0.15, 'triangle', 0.08);
+    } else {
+      inventory[prize.id]++;
+      saveInventory();
+      if (prize.id === 'add10000') {
+        beep(880, 0.20, 'sawtooth', 0.10);
+        setTimeout(() => beep(1180, 0.20, 'sawtooth', 0.10), 150);
+        setTimeout(() => beep(1480, 0.30, 'sawtooth', 0.10), 300);
+      } else {
+        beep(880, 0.15, 'triangle', 0.09);
+      }
+    }
+    finishDrawUI([prize]);
+    lotteryBusy = false;
+    updateLotteryUI();
+    updateItemsBadge();
+    document.getElementById('menuItems').textContent = totalItemCount();
+  }, 800);
+}
+
+function doTenDraw() {
+  if (lotteryBusy) return;
+  if (totalScore < TEN_DRAW_COST) return;
+
+  lotteryBusy = true;
+  totalScore -= TEN_DRAW_COST;
+  saveTotalScore();
+  updateTotalScoreUI();
+  prepareDrawUI(true);
+  beep(600, 0.10, 'sine', 0.06);
+
+  setTimeout(() => {
+    const prizes = [];
+    let hasBig = false;
+    for (let i = 0; i < 10; i++) {
+      const prize = drawPrize();
+      prizes.push(prize);
+      if (prize.type === 'retry') {
+        discountCount++;
+      } else {
+        inventory[prize.id]++;
+        if (prize.id === 'add10000') hasBig = true;
+      }
+    }
+    saveDiscount();
+    saveInventory();
+
+    if (hasBig) {
+      beep(880, 0.20, 'sawtooth', 0.10);
+      setTimeout(() => beep(1180, 0.20, 'sawtooth', 0.10), 150);
+      setTimeout(() => beep(1480, 0.30, 'sawtooth', 0.10), 300);
+    } else {
+      beep(880, 0.15, 'triangle', 0.09);
+    }
+
+    finishDrawUI(prizes);
+    lotteryBusy = false;
+    updateLotteryUI();
+    updateItemsBadge();
+    document.getElementById('menuItems').textContent = totalItemCount();
+  }, 1000);
+}
+
+function openLottery() {
+  if (lotteryBusy) return;
+  uiState = 'lottery';
+  const resultEl = document.getElementById('lotteryResult');
+  const listEl = document.getElementById('drawResultList');
+  resultEl.classList.remove('hidden');
+  resultEl.className = 'lottery-result';
+  resultEl.textContent = '点击下方按钮开始抽奖';
+  listEl.classList.add('hidden');
+  listEl.innerHTML = '';
+  updateTotalScoreUI();
+  renderLotteryPrizes();
+  showScreen('lottery');
+}
+
+/* =========================================================
+   道具背包
+   ========================================================= */
+function renderItemsPanel() {
+  const list = document.getElementById('itemsList');
+  const total = totalItemCount();
+  if (total === 0) {
+    list.innerHTML = '<div class="items-empty-tip">背包空空如也<br>去抽奖获得道具吧！</div>';
+    return;
+  }
+  const html = ITEM_ORDER.map(id => {
+    const item = ITEMS[id];
+    const count = inventory[id] || 0;
+    const emptyCls = count <= 0 ? ' empty' : '';
+    return '<div class="item-row' + emptyCls + '">' +
+      '<div class="item-icon">' + item.icon + '</div>' +
+      '<div class="item-info"><div class="item-name">' + item.name + '</div>' +
+      '<div class="item-desc">' + item.desc + '</div></div>' +
+      '<div class="item-count">x' + count + '</div>' +
+      '<button class="item-use-btn" data-item="' + id + '"' + (count <= 0 ? ' disabled' : '') + '>使用</button>' +
+      '</div>';
+  }).join('');
+  list.innerHTML = html;
+}
+
+function openItems() {
+  if (uiState !== 'game') return;
+  if (playerState === 'charging') {
+    playerState = 'idle'; player.charge = 0; player.sx = 1; player.sy = 1;
+  }
+  uiState = 'items';
+  document.getElementById('itemsScore').textContent = score;
+  document.getElementById('useToast').className = 'use-toast';
+  document.getElementById('useToast').textContent = '';
+  if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+  renderItemsPanel();
+  showScreen('items');
+}
+
+function closeItems() {
+  if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+  uiState = 'game';
+  enterGameView();
+}
+
+function showUseToast(text) {
+  const el = document.getElementById('useToast');
+  el.textContent = text;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    toastTimer = null;
+  }, 1600);
+}
+
+function useItem(itemId) {
+  if (uiState !== 'items') return;
+  if (!ITEMS[itemId]) return;
+  if ((inventory[itemId] || 0) <= 0) return;
+
+  const item = ITEMS[itemId];
+  inventory[itemId]--;
+  saveInventory();
+  score += item.amount;
+  document.getElementById('itemsScore').textContent = score;
+  updateItemsBadge();
+  showUseToast('✅ ' + item.name + ' 已生效，当局分数 +' + item.amount);
+  beep(880, 0.12, 'triangle', 0.09);
+  if (itemId === 'add10000') {
+    setTimeout(() => beep(1180, 0.15, 'triangle', 0.09), 120);
+    setTimeout(() => beep(1480, 0.20, 'triangle', 0.09), 240);
+  }
+  renderItemsPanel();
+}
+
+/* =========================================================
+   输入
+   ========================================================= */
+function onPress() {
+  if (uiState !== 'game') return;
+  if (playerState !== 'idle') return;
+  playerState = 'charging';
+  player.charge = 0;
+  beep(220, 0.05, 'sine', 0.03);
+}
+
+function onRelease() {
+  if (uiState !== 'game') return;
+  if (playerState !== 'charging') return;
+  const cfg = DIFFICULTIES[difficulty];
+  playerState = 'jumping';
+  player.vx = player.charge * cfg.maxVx;
+  player.vy = cfg.jumpVy;
+  player.rotSpeed = (Math.PI * 2) / FLIGHT_FRAMES;
+  player.sx = 1;
+  player.sy = 1;
+  beep(280 + player.charge * 500, 0.12, 'square', 0.05);
+}
+
+function isControlBtnTarget(target) {
+  return !!target && (
+    target === gameSettingsBtn || gameSettingsBtn.contains(target) ||
+    target === gameItemsBtn || gameItemsBtn.contains(target) ||
+    target === gameControls || gameControls.contains(target)
+  );
+}
+
+function cancelChargeIfAny() {
+  if (playerState === 'charging') {
+    playerState = 'idle'; player.charge = 0; player.sx = 1; player.sy = 1;
+  }
+}
+
+cvs.addEventListener('mousedown', e => { e.preventDefault(); onPress(); });
+window.addEventListener('mouseup', e => {
+  if (uiState !== 'game') return;
+  if (isControlBtnTarget(e.target)) { cancelChargeIfAny(); return; }
+  onRelease();
+});
+
+cvs.addEventListener('touchstart', e => { e.preventDefault(); onPress(); }, { passive: false });
+window.addEventListener('touchend', e => {
+  if (uiState !== 'game') return;
+  if (isControlBtnTarget(e.target)) { cancelChargeIfAny(); return; }
+  onRelease();
+}, { passive: true });
+
+cvs.addEventListener('contextmenu', e => e.preventDefault());
+
+window.addEventListener('keydown', e => {
+  if (e.code !== 'Space') return;
+  if (e.repeat) { e.preventDefault(); return; }
+  e.preventDefault();
+  if (uiState === 'game') onPress();
+  else if (uiState === 'menu') startGame();
+  else if (uiState === 'over' && overPanelShown) startGame();
+});
+
+window.addEventListener('keyup', e => {
+  if (e.code !== 'Space') return;
+  e.preventDefault();
+  if (uiState === 'game') onRelease();
+});
+
+window.addEventListener('blur', () => {
+  if (uiState === 'game' && playerState === 'charging') cancelChargeIfAny();
+});
+
+/* =========================================================
+   更新
+   ========================================================= */
+function update(dt) {
+  const k = Math.min(dt, 50) / (1000 / 60);
+  const t = performance.now() / 1000;
+  updateBgParticles(dt, t);
+
+  if (uiState === 'game') {
+    if (playerState === 'charging') {
+      const cfg = DIFFICULTIES[difficulty];
+      player.charge = Math.min(1, player.charge + dt / cfg.chargeTime);
+      player.sx = 1 + player.charge * 0.40;
+      player.sy = 1 - player.charge * 0.40;
+    }
+    if (playerState === 'jumping') {
+      player.vy += GRAVITY * k;
+      player.x += player.vx * k;
+      player.y += player.vy * k;
+      player.rot += player.rotSpeed * k;
+      if (player.y >= GROUND_Y && player.vy > 0) land();
+    }
+    // 竖屏相机跟随：玩家固定在屏幕左侧 CAM_OFFSET 处
+    const targetCam = Math.max(0, player.x - CAM_OFFSET);
+    cameraX += (targetCam - cameraX) * Math.min(1, 0.10 * k);
+  }
+
+  if (uiState === 'over') {
+    player.vy += GRAVITY * k;
+    player.y += player.vy * k;
+    player.rot += 0.09 * k;
+    if (overDelay > 0) {
+      overDelay -= dt;
+      if (overDelay <= 0 && !overPanelShown) showOverPanel();
+    }
+  }
+
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i];
+    f.y -= 0.75 * k;
+    f.life -= 0.014 * k;
+    if (f.life <= 0) floaters.splice(i, 1);
+  }
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.vy += 0.28 * k;
+    p.x += p.vx * k;
+    p.y += p.vy * k;
+    p.life -= 0.028 * k;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+/* =========================================================
+   落地
+   ========================================================= */
+function land() {
+  const cx = player.x;
+  let idx = -1;
+  for (let i = 0; i < platforms.length; i++) {
+    const p = platforms[i];
+    if (cx >= p.x && cx <= p.x + p.w) { idx = i; break; }
+  }
+
+  if (idx < 0) {
+    player.vx = 0; player.vy = 0; player.rot = 0; player.sx = 1; player.sy = 1;
+    gameOver();
+    return;
+  }
+
+  player.y = GROUND_Y;
+  player.vx = 0; player.vy = 0; player.rot = 0; player.sx = 1; player.sy = 1;
+  playerState = 'idle';
+
+  const p = platforms[idx];
+  spawnParticles(cx, GROUND_Y, THEMES[theme].edge, 10);
+
+  if (idx > currentIndex) {
+    const dist = Math.abs(cx - (p.x + p.w / 2));
+    const perfectR = Math.min(14, p.w * 0.28);
+    let gain = 1;
+    if (dist < perfectR) {
+      combo++;
+      gain = 1 + combo;
+      addFloater(cx, GROUND_Y - 95, combo > 1 ? ('完美 x' + combo) : '完美!', '#fbbf24');
+      spawnParticles(cx, GROUND_Y, '#fbbf24', 16);
+      beep(880, 0.10, 'triangle', 0.09);
+      setTimeout(() => beep(1180, 0.10, 'triangle', 0.07), 75);
+    } else {
+      combo = 0;
+      addFloater(cx, GROUND_Y - 85, '+1', '#7dd3fc');
+      beep(520, 0.07, 'sine', 0.07);
+    }
+    score += gain;
+    currentIndex = idx;
+    while (platforms.length < currentIndex + 5) addPlatform();
+  } else {
+    combo = 0;
+  }
+}
+
+/* =========================================================
+   绘制：背景
+   ========================================================= */
+function drawBackground() {
+  const th = THEMES[theme];
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, th.bg[0]);
+  g.addColorStop(0.55, th.bg[1]);
+  g.addColorStop(1, th.bg[2]);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  const t = performance.now() / 1000;
+  for (const s of bgParticles) {
+    if (th.particleType === 'star') {
+      ctx.globalAlpha = 0.25 + 0.65 * Math.abs(Math.sin(t * 1.6 + s.ph));
+      ctx.fillStyle = th.particleColor;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    } else if (th.particleType === 'snow') {
+      ctx.globalAlpha = 0.45 + 0.40 * Math.abs(Math.sin(t * 1.2 + s.ph));
+      ctx.fillStyle = th.particleColor;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.globalAlpha = 0.28 + 0.55 * Math.abs(Math.sin(t * 3 + s.ph));
+      ctx.fillStyle = th.particleColor;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  const hg = ctx.createRadialGradient(W / 2, GROUND_Y + 40, 0, W / 2, GROUND_Y + 40, 620);
+  hg.addColorStop(0, th.glow);
+  hg.addColorStop(1, th.glowEnd);
+  ctx.fillStyle = hg;
+  ctx.fillRect(0, 0, W, H);
+}
+
+/* =========================================================
+   绘制：平台
+   ========================================================= */
+function drawPlatform(p) {
+  const th = THEMES[theme];
+  const x = p.x - cameraX;
+  if (x > W + 60 || x + p.w < -60) return;
+
+  const g = ctx.createLinearGradient(x, GROUND_Y, x, H);
+  g.addColorStop(0, th.platformTop);
+  g.addColorStop(1, th.platformBottom);
+  ctx.fillStyle = g;
+  ctx.fillRect(x, GROUND_Y, p.w, H - GROUND_Y);
+
+  ctx.save();
+  ctx.shadowColor = th.edge;
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = th.edge;
+  ctx.fillRect(x, GROUND_Y - 4, p.w, 5);
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillRect(x, GROUND_Y - 4, p.w, 2);
+
+  const cx = x + p.w / 2;
+  ctx.fillStyle = 'rgba(251,191,36,0.65)';
+  ctx.beginPath();
+  ctx.moveTo(cx - 4, GROUND_Y - 12);
+  ctx.lineTo(cx + 4, GROUND_Y - 12);
+  ctx.lineTo(cx, GROUND_Y - 6);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/* =========================================================
+   绘制：手持物品
+   ========================================================= */
+function drawHeldItem(item) {
+  const bx = 16, by = -30;
+
+  if (item === 'basketball') {
+    const br = 7;
+    ctx.fillStyle = '#e88a2e';
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#5a2d00';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(bx - br, by); ctx.lineTo(bx + br, by); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx, by - br); ctx.lineTo(bx, by + br); ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.stroke();
+  } else if (item === 'fire') {
+    ctx.fillStyle = '#fb923c';
+    ctx.beginPath();
+    ctx.moveTo(bx, by - 10);
+    ctx.quadraticCurveTo(bx + 8, by - 4, bx + 6, by + 6);
+    ctx.quadraticCurveTo(bx, by + 10, bx - 6, by + 6);
+    ctx.quadraticCurveTo(bx - 8, by - 4, bx, by - 10);
+    ctx.fill();
+    ctx.fillStyle = '#fef3c7';
+    ctx.beginPath();
+    ctx.moveTo(bx, by - 4);
+    ctx.quadraticCurveTo(bx + 3, by, bx + 2, by + 5);
+    ctx.quadraticCurveTo(bx, by + 7, bx - 2, by + 5);
+    ctx.quadraticCurveTo(bx - 3, by, bx, by - 4);
+    ctx.fill();
+  } else if (item === 'snowball') {
+    const br = 7;
+    ctx.fillStyle = '#e0f2fe';
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#7dd3fc';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 0.8;
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI;
+      ctx.beginPath();
+      ctx.moveTo(bx - Math.cos(a) * br, by - Math.sin(a) * br);
+      ctx.lineTo(bx + Math.cos(a) * br, by + Math.sin(a) * br);
+      ctx.stroke();
+    }
+  } else if (item === 'dagger') {
+    ctx.fillStyle = '#c0c0c0';
+    ctx.beginPath();
+    ctx.moveTo(bx, by - 10);
+    ctx.lineTo(bx + 2, by - 2);
+    ctx.lineTo(bx - 2, by - 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#5a2d00';
+    ctx.fillRect(bx - 1.5, by - 2, 3, 8);
+    ctx.fillStyle = '#a78bfa';
+    ctx.fillRect(bx - 4, by - 2.5, 8, 1.5);
+  } else if (item === 'coin') {
+    const br = 7;
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#b45309';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#fde68a';
+    ctx.font = 'bold 9px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('$', bx, by + 1);
+  } else if (item === 'orb') {
+    const br = 7;
+    const glow = ctx.createRadialGradient(bx, by, 0, bx, by, br * 1.6);
+    glow.addColorStop(0, 'rgba(0,255,255,0.9)');
+    glow.addColorStop(0.5, 'rgba(0,255,255,0.35)');
+    glow.addColorStop(1, 'rgba(0,255,255,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(bx, by, br * 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(bx, by, br * 0.6, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+/* =========================================================
+   绘制：角色
+   ========================================================= */
+function drawKun(x, y, rot, sx, sy, skinId) {
+  const s = SKINS[skinId] || SKINS.kun;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.scale(sx, sy);
+
+  const SKIN = s.skin, HAIR = s.hair, SHIRT = s.shirt;
+  const OVERALL = s.overall, SHOE = s.shoe;
+
+  ctx.fillStyle = OVERALL;
+  ctx.fillRect(-10, -28, 8, 24);
+  ctx.fillRect(2, -28, 8, 24);
+
+  ctx.fillStyle = SHOE;
+  roundRect(-12, -8, 12, 8, 3); ctx.fill();
+  roundRect(0, -8, 12, 8, 3); ctx.fill();
+
+  ctx.fillStyle = SKIN;
+  ctx.fillRect(-18, -50, 6, 22);
+  ctx.fillRect(12, -50, 6, 22);
+
+  ctx.fillStyle = SHIRT;
+  roundRect(-13, -54, 26, 30, 7); ctx.fill();
+
+  ctx.fillStyle = OVERALL;
+  roundRect(-13, -30, 26, 8, 3); ctx.fill();
+  ctx.fillRect(-9, -54, 4, 26);
+  ctx.fillRect(5, -54, 4, 26);
+
+  ctx.fillStyle = SKIN;
+  ctx.beginPath(); ctx.arc(0, -68, 13, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = HAIR;
+  ctx.beginPath(); ctx.arc(0, -70, 13.5, Math.PI, Math.PI * 2); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-1, -74);
+  ctx.quadraticCurveTo(-14, -76, -13, -62);
+  ctx.quadraticCurveTo(-7, -68, -1, -72);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(1, -74);
+  ctx.quadraticCurveTo(14, -76, 13, -62);
+  ctx.quadraticCurveTo(7, -68, 1, -72);
+  ctx.fill();
+
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath(); ctx.arc(-4.5, -67, 1.6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4.5, -67, 1.6, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,130,150,0.45)';
+  ctx.beginPath(); ctx.arc(-8, -63, 2.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(8, -63, 2.5, 0, Math.PI * 2); ctx.fill();
+
+  drawHeldItem(s.item);
+
+  ctx.restore();
+}
+
+function drawPlayer() {
+  const x = player.x - cameraX;
+  const ratio = clamp(1 - (GROUND_Y - player.y) / 300, 0, 1);
+  if (ratio > 0.02) {
+    ctx.globalAlpha = 0.25 * ratio;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(x, GROUND_Y + 3, 18 * ratio, 5 * ratio, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  if (x < -120 || x > W + 120) return;
+  drawKun(x, player.y, player.rot, player.sx, player.sy, currentSkin);
+}
+
+/* =========================================================
+   绘制：UI（竖屏布局）
+   ========================================================= */
+function drawUI() {
+  if (uiState !== 'game' && uiState !== 'over') return;
+
+  // 分数
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 32px ' + FONT;
+  ctx.fillText(score, 20, 16);
+
+  ctx.font = '12px ' + FONT;
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.fillText('最高 ' + best, 22, 54);
+
+  // 难度
+  ctx.textAlign = 'right';
+  ctx.font = 'bold 12px ' + FONT;
+  ctx.fillStyle = THEMES[theme].edge;
+  ctx.fillText('难度 · ' + DIFFICULTIES[difficulty].name, W - 20, 20);
+
+  // 皮肤
+  ctx.fillStyle = SKINS[currentSkin].accent;
+  ctx.font = 'bold 11px ' + FONT;
+  ctx.fillText(SKINS[currentSkin].name, W - 20, 40);
+
+  // 连击
+  if (combo > 1 && uiState === 'game') {
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 18px ' + FONT;
+    ctx.fillText('连击 x' + combo, W - 20, 60);
+  }
+
+  // 蓄力条
+  if (playerState === 'charging') {
+    const bw = 200, bh = 10;
+    const bx = (W - bw) / 2, by = H - 42;
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    roundRect(bx, by, bw, bh, 5); ctx.fill();
+    const g = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+    g.addColorStop(0, '#4ade80');
+    g.addColorStop(0.6, '#fbbf24');
+    g.addColorStop(1, '#f43f5e');
+    ctx.fillStyle = g;
+    if (player.charge > 0.005) {
+      roundRect(bx, by, bw * player.charge, bh, 5); ctx.fill();
+    }
+  }
+
+  // 新手指引
+  if (score === 0 && playerState === 'idle' && uiState === 'game') {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = '14px ' + FONT;
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText('按住鼠标 / 空格蓄力，松开起跳', W / 2, H - 34);
+  }
+}
+
+function drawFloaters() {
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  for (const f of floaters) {
+    ctx.globalAlpha = Math.min(1, f.life * 1.5);
+    ctx.fillStyle = f.color;
+    ctx.font = 'bold 20px ' + FONT;
+    ctx.fillText(f.text, f.x - cameraX, f.y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - cameraX - 2, p.y - 2, 4, 4);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function render() {
+  drawBackground();
+  for (const p of platforms) drawPlatform(p);
+  drawParticles();
+  drawFloaters();
+  drawPlayer();
+  drawUI();
+}
+
+/* =========================================================
+   主循环
+   ========================================================= */
+let lastT = performance.now();
+function loop(t) {
+  const dt = Math.min(t - lastT, 50);
+  lastT = t;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* =========================================================
+   UI 事件绑定
+   ========================================================= */
+document.getElementById('btnStart').addEventListener('click', startGame);
+document.getElementById('btnSkins').addEventListener('click', openSkins);
+document.getElementById('btnSkinsBack').addEventListener('click', goHome);
+document.getElementById('btnSettings').addEventListener('click', () => openSettings('menu'));
+document.getElementById('btnLeaderboard').addEventListener('click', () => {
+  uiState = 'leaderboard';
+  leaderboardBack = 'menu';
+  renderLeaderboard();
+  showScreen('leaderboard');
+});
+document.getElementById('btnLottery').addEventListener('click', openLottery);
+
+document.getElementById('mapRow').addEventListener('click', e => {
+  const btn = e.target.closest('.map-btn');
+  if (!btn) return;
+  const th = btn.dataset.theme;
+  if (!THEMES[th] || th === theme) return;
+  theme = th;
+  lsSet('kun_jump_theme', th);
+  initBgParticles();
+  syncMapUI();
+  beep(660, 0.07, 'sine', 0.06);
+});
+
+document.getElementById('skinGrid').addEventListener('click', e => {
+  const btn = e.target.closest('.skin-card');
+  if (!btn) return;
+  const id = btn.dataset.skin;
+  if (!SKINS[id] || id === currentSkin) return;
+  currentSkin = id;
+  lsSet('kun_jump_skin', id);
+  syncSkinUI();
+  beep(720, 0.09, 'sine', 0.07);
+  setTimeout(() => beep(960, 0.09, 'sine', 0.06), 70);
+});
+
+gameSettingsBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (uiState !== 'game') return;
+  openSettings('game');
+});
+gameItemsBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (uiState !== 'game') return;
+  openItems();
+});
+
+document.getElementById('btnItemsBack').addEventListener('click', closeItems);
+document.getElementById('itemsList').addEventListener('click', e => {
+  const btn = e.target.closest('.item-use-btn');
+  if (!btn) return;
+  useItem(btn.dataset.item);
+});
+
+const diffRow = document.getElementById('diffRow');
+const diffDesc = document.getElementById('diffDesc');
+const volSlider = document.getElementById('volSlider');
+const volVal = document.getElementById('volVal');
+
+function syncSettingsUI() {
+  diffRow.querySelectorAll('.opt').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.diff === difficulty);
+  });
+  const tip = (settingsBack === 'game') ? '（修改难度将在下一局生效）' : '';
+  diffDesc.textContent = DIFFICULTIES[difficulty].desc + tip;
+  volSlider.value = Math.round(soundVolume * 100);
+  volVal.textContent = Math.round(soundVolume * 100) + '%';
+}
+
+diffRow.addEventListener('click', e => {
+  const btn = e.target.closest('.opt');
+  if (!btn) return;
+  const d = btn.dataset.diff;
+  if (!DIFFICULTIES[d]) return;
+  difficulty = d;
+  lsSet('kun_jump_diff', d);
+  syncSettingsUI();
+  beep(660, 0.07, 'sine', 0.06);
+});
+
+let lastVolBeep = 0;
+volSlider.addEventListener('input', () => {
+  const v = +volSlider.value;
+  soundVolume = clamp(v / 100, 0, 1);
+  volVal.textContent = v + '%';
+  lsSet('kun_jump_vol', soundVolume);
+  const now = performance.now();
+  if (now - lastVolBeep > 120 && soundVolume > 0) {
+    lastVolBeep = now;
+    beep(700, 0.05, 'sine', 0.06);
+  }
+});
+volSlider.addEventListener('change', () => beep(760, 0.08, 'sine', 0.08));
+
+document.getElementById('btnSettingsBack').addEventListener('click', closeSettings);
+
+document.getElementById('btnLbBack').addEventListener('click', () => {
+  if (leaderboardBack === 'over') {
+    uiState = 'over';
+    showScreen('over');
+  } else goHome();
+});
+document.getElementById('btnClearBoard').addEventListener('click', () => {
+  if (!confirm('确定要清空排行榜吗？')) return;
+  lsSet('kun_jump_board', '[]');
+  renderLeaderboard();
+});
+
+document.getElementById('btnDraw').addEventListener('click', doSingleDraw);
+document.getElementById('btnTenDraw').addEventListener('click', doTenDraw);
+document.getElementById('btnLotteryBack').addEventListener('click', () => {
+  if (lotteryBusy) return;
+  goHome();
+});
+
+document.getElementById('btnRetry').addEventListener('click', startGame);
+document.getElementById('btnHome').addEventListener('click', goHome);
+document.getElementById('btnOverLeaderboard').addEventListener('click', () => {
+  uiState = 'leaderboard';
+  leaderboardBack = 'over';
+  renderLeaderboard();
+  showScreen('leaderboard');
+});
+
+document.querySelectorAll('button').forEach(b => {
+  b.addEventListener('click', () => b.blur());
+});
+
+/* =========================================================
+   启动
+   ========================================================= */
+initBgParticles();
+reset();
+refreshMenuBest();
+syncMapUI();
+renderSkinGrid();
+syncSkinUI();
+syncSettingsUI();
+updateTotalScoreUI();
+renderLotteryPrizes();
+uiState = 'menu';
+showScreen('menu');
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
